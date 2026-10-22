@@ -1,0 +1,22 @@
+{
+  "name": "interesting-x-maxwell-relations",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 43150",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 43150",
+    "typecheck": "tsc -b --pretty false"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "typescript": "~5.9.2",
+    "vite": "^7.1.5"
+  },
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "description": "Two cylinders of gas: one measures hidden disorder the hard way, the other just warms a sealed box and reads a gauge. The two glowing bars always match. Try a real gas near its critical point and see why on a glass energy landscape.",
+  "license": "MIT",
+  "private": false
+}

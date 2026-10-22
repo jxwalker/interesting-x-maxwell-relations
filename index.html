@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Interesting X · Maxwell's Swap: measure the unmeasurable</title>
+    <meta name="description" content="Two cylinders of gas: one measures hidden disorder the hard way, the other just warms a sealed box and reads a gauge. The two glowing bars always match. Try a real gas near its critical point and see why on a glass energy landscape." />
+    <meta name="theme-color" content="#070a12" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='5' y='8' width='8' height='20' rx='2' fill='none' stroke='%23ff9a4a' stroke-width='2.2'/%3E%3Crect x='19' y='8' width='8' height='20' rx='2' fill='none' stroke='%232fd1c5' stroke-width='2.2'/%3E%3Cpath d='M8 5h16' stroke='%236fe7ff' stroke-width='2.5'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <div id="app">
+      <div id="stage"></div>
+      <svg id="leaders" aria-hidden="true"></svg>
+      <div id="labels" aria-hidden="true"></div>
+
+      <header class="intro" id="intro">
+        <h1>Maxwell's Swap</h1>
+        <p class="sub">Measure the unmeasurable</p>
+        <p class="hint">Press ‘Run both experiments’: a hard measurement and an easy one, always equal.</p>
+        <button class="help" id="btn-help" type="button" aria-controls="explain" aria-expanded="false" aria-label="What am I looking at?"><i aria-hidden="true">?</i><span>What am I looking at?</span></button>
+      </header>
+
+      <div class="badge" id="badge" hidden>simple mode (no WebGL)</div>
+      <button class="btn chip whole" id="btn-whole" type="button" hidden>← Whole bench</button>
+
+      <section class="panel dock" id="dock" aria-label="Controls">
+        <p class="caption" id="caption" aria-live="polite"><i class="dot" aria-hidden="true"></i><span id="caption-text">Two cylinders, same gas. Press ‘Run both experiments’ to measure one hard thing and one easy thing.</span></p>
+
+        <button class="btn run" id="btn-run" type="button"><span class="led" aria-hidden="true"></span>Run both experiments</button>
+
+        <div class="ctl main-ctl">
+          <div class="ctl-row"><label class="cap" for="temp">Temperature <span class="tag">T</span></label><span class="mono val" id="temp-val">300 K</span></div>
+          <input id="temp" type="range" min="150" max="900" step="1" value="300" aria-label="Temperature of both cylinders, in kelvin" />
+        </div>
+
+        <div class="ctl main-ctl">
+          <div class="ctl-row"><label class="cap" for="volume">Volume <span class="tag">V · or drag the left handle</span></label><span class="mono val" id="volume-val">1.00 L</span></div>
+          <input id="volume" type="range" min="0" max="1000" step="1" value="435" aria-label="Volume of each cylinder, in litres (one mole of gas)" />
+        </div>
+
+        <div class="readouts">
+          <div class="ro"><span class="lbl">Pressure <span class="tag">P</span><span class="tag pmean">what the gauge reads now</span></span><span class="mono" id="r-P">2494 kPa</span></div>
+          <div class="ro hard"><span class="lbl" id="r-hard-l">Disorder gained per litre <span class="tag">hard way</span></span><span class="mono big" id="r-hard">—</span><span class="desc" id="r-hard-d">Heat that flowed in, divided by temperature, per litre of expansion.</span></div>
+          <div class="ro easy"><span class="lbl" id="r-easy-l">Pressure rise per degree <span class="tag">easy way</span></span><span class="mono big" id="r-easy">—</span><span class="desc" id="r-easy-d">How much the pressure gauge climbs for each degree of warming with the piston locked.</span></div>
+          <div class="ro match"><span class="lbl">Match</span><span class="mono big" id="r-match">—</span><span class="desc" id="r-match-d">How closely the two ways agree. Tiny differences come only from the finite step size.</span></div>
+        </div>
+
+        <div class="btn-row">
+          <button id="btn-reset" class="btn" type="button" title="Restore the example: ideal gas, 300 K, 1 litre, first relation">Reset to example</button>
+          <button id="btn-advanced" class="btn" type="button" aria-expanded="false" aria-controls="adv">Advanced</button>
+        </div>
+        <p class="credit credit-in-dock">
+          Inspired by <a href="https://x.com/cosmosarcive/status/2110111332385095902" target="_blank" rel="noopener">@cosmosarcive</a> ·
+          <a href="https://en.wikipedia.org/wiki/Maxwell_relations" target="_blank" rel="noopener">Maxwell relations</a>
+        </p>
+      </section>
+
+      <aside class="panel adv" id="adv" hidden aria-label="Advanced">
+        <div class="adv-head">
+          <span class="cap">Advanced</span>
+          <button class="x" id="btn-adv-close" type="button" aria-label="Close advanced">×</button>
+        </div>
+
+        <div class="presets">
+          <button class="btn chip" id="preset-critical" type="button">Near the critical point</button>
+          <button class="btn chip" id="preset-cold" type="button">Cold and squeezed</button>
+          <button class="btn chip" id="preset-hot" type="button">Hot and thin</button>
+        </div>
+
+        <label class="ctl">
+          <span class="ctl-row"><span class="cap">Choose the gas</span><span class="mono" id="gas-ab">a 0 · b 0</span></span>
+          <select id="gas" aria-label="Choose the gas">
+            <option value="ideal">Ideal gas (no attraction, point molecules)</option>
+            <option value="argon">Argon (van der Waals)</option>
+            <option value="co2">Carbon dioxide (van der Waals)</option>
+            <option value="water">Water vapour (van der Waals)</option>
+            <option value="custom">Custom (use the two sliders)</option>
+          </select>
+          <span class="desc">A real gas: molecules pull on each other and take up room. The landscape reshapes.</span>
+        </label>
+        <label class="ctl">
+          <span class="ctl-row"><span class="cap">How much molecules attract <span class="tag">a</span></span><span class="mono" id="attract-val">250 kPa·L²</span></span>
+          <input id="attract" type="range" min="0" max="800" step="1" value="250" aria-label="How much molecules attract (van der Waals a)" />
+        </label>
+        <label class="ctl">
+          <span class="ctl-row"><span class="cap">How big molecules are <span class="tag">b</span></span><span class="mono" id="size-val">0.040 L</span></span>
+          <input id="size" type="range" min="0.005" max="0.08" step="0.001" value="0.04" aria-label="How big molecules are (van der Waals b, litres per mole)" />
+        </label>
+        <div class="ctl">
+          <span class="cap">Molecule shape <span class="tag">C<sub>v</sub></span></span>
+          <div class="seg" role="group" aria-label="Molecule shape (ideal and custom gases)">
+            <button id="cv-mono" class="segb on" type="button" aria-pressed="true">Single atoms (3/2 R)</button>
+            <button id="cv-di" class="segb" type="button" aria-pressed="false">Two atoms (5/2 R)</button>
+          </div>
+        </div>
+
+        <div class="ctl">
+          <span class="cap">Pick a relation <span class="tag">the thermodynamic square</span></span>
+          <div class="square" role="group" aria-label="Four Maxwell relations laid out as the thermodynamic square">
+            <span class="corner c-s">disorder <i>S</i></span>
+            <button id="rel-2" class="side s-top" type="button" aria-pressed="false"><b>Energy U</b></button>
+            <span class="corner c-v">volume <i>V</i></span>
+            <button id="rel-4" class="side s-left" type="button" aria-pressed="false"><b>Enthalpy H</b></button>
+            <span class="sq-mid" aria-hidden="true"></span>
+            <button id="rel-1" class="side s-right on" type="button" aria-pressed="true"><b>Free energy F</b></button>
+            <span class="corner c-p">pressure <i>P</i></span>
+            <button id="rel-3" class="side s-bot" type="button" aria-pressed="false"><b>Gibbs G</b></button>
+            <span class="corner c-t">temperature <i>T</i></span>
+          </div>
+          <p class="mono rel-eq" id="rel-eq">(∂S/∂V)<sub>T</sub> = (∂P/∂T)<sub>V</sub></p>
+          <span class="desc">Each side of the square is an energy; its two corners are what it naturally depends on. Each relation swaps a heat-counting measurement (left) for a dial reading (right).</span>
+        </div>
+
+        <label class="check"><input id="show-why" type="checkbox" /><span><span class="cap">Show why</span><span class="desc">Two step orders on the glass landscape, one shared corner.</span></span></label>
+
+        <label class="ctl">
+          <span class="ctl-row"><span class="cap">Step size <span class="tag">dV, dT</span></span><span class="mono" id="step-val">1.0 %</span></span>
+          <input id="step" type="range" min="0" max="100" step="1" value="40" aria-label="Size of the small step each experiment takes" />
+          <span class="desc" id="step-err">Gap from the exact slope: 0.0008 %. Smaller steps, smaller gap.</span>
+        </label>
+
+        <div class="card">
+          <span class="cap">Cyclic rule <span class="tag">(∂P/∂T)<sub>V</sub>(∂T/∂V)<sub>P</sub>(∂V/∂P)<sub>T</sub></span></span>
+          <p class="mono" id="cyc">8.314 × 120.3 × −0.001000 = −1.000</p>
+          <span class="desc">Three easy experiments chained round a loop always multiply to −1, not +1.</span>
+        </div>
+        <div class="card">
+          <span class="cap">Why anyone cares <span class="tag">C<sub>p</sub> − C<sub>v</sub> = TVα²/κ<sub>T</sub></span></span>
+          <p class="mono" id="cpcv">8.314 J/K from easy · 8.314 direct</p>
+          <span class="desc" id="cpcv-d">Extra heat needed when the gas may expand, from how much it swells when warmed (α) and shrinks when squeezed (κ). For an ideal gas it is R = 8.314.</span>
+        </div>
+      </aside>
+
+      <section class="panel explain-card" id="explain" role="dialog" aria-labelledby="explain-title" hidden>
+        <div class="explain-head">
+          <h2 id="explain-title">What you're looking at</h2>
+          <button class="x" id="btn-explain-x" type="button" aria-label="Close explanation">×</button>
+        </div>
+        <p>A lab bench with two cylinders of the same gas and a glass ‘energy landscape’. The left cylinder measures something that's really hard to measure. The right one measures something easy. Watch the two glowing bars.</p>
+        <p><b>Why it matters:</b> entropy, a gas's hidden disorder, can't be read off a dial. In the 1870s James Clerk Maxwell showed that because a gas's energy is a smooth landscape, how much disorder it gains when it expands is always exactly equal to how fast its pressure rises when you warm it in a sealed box. Engineers use this swap every day to work out things no instrument can see.</p>
+        <p class="try"><span>How to use it</span></p>
+        <ol class="try-steps">
+          <li>Press <b>Run both experiments</b>. Left: the gas expands while a warm bath feeds it heat. Right: the piston is locked and the gas is warmed.</li>
+          <li>Compare the two bars. They match, every time.</li>
+          <li>Change the <b>temperature</b> or drag the piston, then run again. Different numbers, still a match.</li>
+          <li>Open <b>Advanced</b> to try a real gas, the other three relations, or <b>Show why</b> on the glass landscape.</li>
+          <li><b>Reset to example</b> puts everything back.</li>
+        </ol>
+        <button class="btn primary" id="btn-explain-ok" type="button">Got it</button>
+      </section>
+
+      <footer class="credit credit-foot">
+        Inspired by <a href="https://x.com/cosmosarcive/status/2110111332385095902" target="_blank" rel="noopener">@cosmosarcive</a>'s post on the Maxwell relations ·
+        <a href="https://en.wikipedia.org/wiki/Maxwell_relations" target="_blank" rel="noopener">Maxwell relations (Wikipedia)</a>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
